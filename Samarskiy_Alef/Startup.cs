@@ -2,19 +2,38 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Samarskiy_Alef
 {
     public class Startup
     {
+        public IConfiguration Configuration { get; }
+
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
         // This method gets called by the runtime. Use this method to add services to the container.
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "Samarskiy API", Version = "ver 1" });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -25,10 +44,21 @@ namespace Samarskiy_Alef
                 app.UseDeveloperExceptionPage();
             }
 
-            app.Run(async (context) =>
+            //Определяем возможность аутентификации
+            app.UseAuthentication();
+
+            //app.UseSwagger();
+
+            app.UseMiddleware<Filters.MyAuthenticationMiddleware>();
+
+            app.UseSwagger();
+
+            app.UseSwaggerUI(c =>
             {
-                await context.Response.WriteAsync("Hello World!");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Samarskiy API v_1");
             });
+
+            app.UseMvc();
         }
     }
 }
